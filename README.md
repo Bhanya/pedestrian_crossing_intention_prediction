@@ -28,33 +28,6 @@ train_EfficientPIE_JAAD.py      JAAD training entry point
 test_EfficientPIE_JAAD.py       JAAD evaluation entry point
 ```
 
-## Training And Evaluation
-
-Train the final image-plus-trajectory model:
-
-```bash
-python3 train_EfficientPIE_JAAD.py \
-  --data-path ../JAAD \
-  --device cpu \
-  --epochs 12 \
-  --batch_size 4 \
-  --use-bbox-trajectory \
-  --progress-every 50 \
-  --metrics-path ./logs/jaad_bbox_traj_best_f1_metrics.csv
-```
-
-Evaluate the checkpoint selected by validation F1 on the held-out test split:
-
-```bash
-python3 test_EfficientPIE_JAAD.py \
-  --data-path ../JAAD \
-  --device cpu \
-  --batch_size 4 \
-  --weights ./weights/transfer_best_f1_model_JAAD_bbox_traj.pth \
-  --split test \
-  --use-bbox-trajectory
-```
-
 ## Goal
 
 Use the EfficientPIE lightweight convolutional architecture as a baseline for pedestrian crossing intention prediction on JAAD, then test whether adding bounding-box context features improves performance on the imbalanced JAAD validation set.

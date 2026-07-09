@@ -28,35 +28,6 @@ train_EfficientPIE_JAAD.py      JAAD training entry point
 test_EfficientPIE_JAAD.py       JAAD evaluation entry point
 ```
 
-## Installation
-
-Python 3 and a local checkout of JAAD are required.
-
-```bash
-git clone https://github.com/ykotseruba/JAAD.git
-git clone <your-repository-url>
-cd EfficientPIE
-
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r requirements.txt
-```
-
-Download the 346 JAAD clips using the instructions in the
-[official JAAD repository](https://github.com/ykotseruba/JAAD), then place them
-under `JAAD/JAAD_clips/`. The datasets, videos, and extracted images are not
-distributed with this repository.
-
-To save storage, extract only the frames required by the official train,
-validation, and test splits:
-
-```bash
-python3 tools/extract_required_jaad_frames.py \
-  --data-path ../JAAD \
-  --splits train val test \
-  --reverse-step 1
-```
-
 ## Training And Evaluation
 
 Train the final image-plus-trajectory model:

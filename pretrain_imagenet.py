@@ -25,8 +25,8 @@ def main(args):
     print(args)
     print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
     tb_writer = SummaryWriter()
-    if os.path.exists("./pre_train_weights_efficientpie") is False:
-        os.makedirs("./pre_train_weights_efficientpie")
+    if os.path.exists("./pre_train_weights") is False:
+        os.makedirs("./pre_train_weights")
 
     # define the transform
     data_transform = {
@@ -53,11 +53,13 @@ def main(args):
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=nw)
 
     model = EfficientPIE(num_classes=1000).to(device)
-    model_weight_path = "./pre_train_weights_efficientpie/min_loss_pretrained_model_imagenet_backup.pth"
-    weights_dict = torch.load(model_weight_path, map_location=device)
-    load_weights_dict = {k: v for k, v in weights_dict.items()
-                         if k in model.state_dict() and model.state_dict()[k].numel() == v.numel()}
-    print(model.load_state_dict(load_weights_dict, strict=False))
+    if args.weights:
+        if not os.path.exists(args.weights):
+            raise FileNotFoundError("not found weights file: {}".format(args.weights))
+        weights_dict = torch.load(args.weights, map_location=device)
+        load_weights_dict = {k: v for k, v in weights_dict.items()
+                             if k in model.state_dict() and model.state_dict()[k].numel() == v.numel()}
+        print(model.load_state_dict(load_weights_dict, strict=False))
 
     # optimizer
     pg = [p for p in model.parameters() if p.requires_grad]
@@ -67,8 +69,8 @@ def main(args):
     # train and validate
     best_val_acc = 0.0
     min_loss = 100.0
-    save_path = "./pre_train_weights_efficientpie/best_pretrained_model_imagenet.pth"
-    min_loss_path = "./pre_train_weights_efficientpie/min_loss_pretrained_model_imagenet.pth"
+    save_path = "./pre_train_weights/best_pretrained_model_imagenet.pth"
+    min_loss_path = "./pre_train_weights/min_loss_pretrained_model_imagenet.pth"
     print(model)
     print("Start Training now!")
     for epoch in range(args.epochs):
@@ -104,6 +106,8 @@ if __name__ == '__main__':
     # PIE dataset path
     parser.add_argument('--train_path', type=str, default="/home/fqu/FangQu_temporary/imagenet/train")
     parser.add_argument('--val_path', type=str, default="/home/fqu/FangQu_temporary/imagenet/val")
+    parser.add_argument('--weights', type=str, default="",
+                        help='optional initial weights path to resume pretraining from')
     parser.add_argument('--device', default='cuda:6', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
     main(opt)

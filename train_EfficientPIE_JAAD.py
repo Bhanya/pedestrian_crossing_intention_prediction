@@ -201,18 +201,22 @@ def main(args):
 
     # train and validate
     best_val_acc = 0.0
+    best_val_f1 = 0.0
     min_loss = 100.0
     if args.use_bbox_trajectory:
         save_path = "./weights/transfer_best_model_JAAD_bbox_traj.pth"
         min_loss_path = "./weights/transfer_min_loss_model_JAAD_bbox_traj.pth"
+        best_f1_path = "./weights/transfer_best_f1_model_JAAD_bbox_traj.pth"
         metrics_path = args.metrics_path or "./logs/jaad_bbox_traj_metrics.csv"
     elif args.use_bbox_features:
         save_path = "./weights/transfer_best_model_JAAD_bbox.pth"
         min_loss_path = "./weights/transfer_min_loss_model_JAAD_bbox.pth"
+        best_f1_path = "./weights/transfer_best_f1_model_JAAD_bbox.pth"
         metrics_path = args.metrics_path or "./logs/jaad_bbox_metrics.csv"
     else:
         save_path = "./weights/transfer_best_model_JAAD.pth"
         min_loss_path = "./weights/transfer_min_loss_model_JAAD.pth"
+        best_f1_path = "./weights/transfer_best_f1_model_JAAD.pth"
         metrics_path = args.metrics_path or "./logs/jaad_baseline_metrics.csv"
     metrics_file, metrics_writer = create_metrics_writer(metrics_path)
     print(f"Recording epoch metrics to {metrics_path}")
@@ -274,6 +278,10 @@ def main(args):
                 best_val_acc = val_acc
                 torch.save(model.state_dict(), save_path)
                 print(f'Saved best model at epoch {epoch} with validation accuracy: {val_acc:.4f}')
+            if val_f1 > best_val_f1 and not args.no_save:
+                best_val_f1 = val_f1
+                torch.save(model.state_dict(), best_f1_path)
+                print(f'Saved best F1 model at epoch {epoch} with validation F1: {val_f1:.4f}')
             if val_loss < min_loss and not args.no_save:
                 min_loss = val_loss
                 torch.save(model.state_dict(), min_loss_path)

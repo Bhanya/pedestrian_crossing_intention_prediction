@@ -11,12 +11,10 @@
 # returns it with the crossing/not-crossing label.
 
 import os
-import random
 
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import functional as F
 
 class MyDataSet(Dataset):
 

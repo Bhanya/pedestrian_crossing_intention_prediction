@@ -24,8 +24,63 @@ tools/                          selective frame extraction and threshold tuning
 logs/                           recorded experiment and test metrics
 weights/                        trained JAAD checkpoints
 pre_train_weights/              ImageNet-pretrained starting checkpoints
+pretrain_imagenet.py            ImageNet pretraining entry point
 train_EfficientPIE_JAAD.py      JAAD training entry point
 test_EfficientPIE_JAAD.py       JAAD evaluation entry point
+```
+
+## Usage
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Pretrain the CNN backbone on ImageNet (optional; a pretrained checkpoint is
+already provided in `pre_train_weights/`):
+
+```bash
+python pretrain_imagenet.py --train_path <imagenet_train_dir> --val_path <imagenet_val_dir> \
+    --weights pre_train_weights/min_loss_pretrained_model_imagenet.pth --device cuda:0
+```
+
+Train on JAAD. `--use-bbox-features` and `--use-bbox-trajectory` select Version
+1 and Version 2 respectively; omit both for the baseline:
+
+```bash
+python train_EfficientPIE_JAAD.py --data-path <jaad_dir> --device cpu
+python train_EfficientPIE_JAAD.py --data-path <jaad_dir> --use-bbox-features
+python train_EfficientPIE_JAAD.py --data-path <jaad_dir> --use-bbox-trajectory \
+    --epochs 12 --batch_size 4
+```
+
+Each run saves up to three checkpoints under `weights/`: the best
+validation-accuracy checkpoint, the lowest validation-loss checkpoint, and the
+best validation-F1 checkpoint (`transfer_best_f1_model_JAAD*.pth`). Per-epoch
+metrics are written to `--metrics-path` (defaults to a name under `logs/`
+based on the selected model variant).
+
+Evaluate a saved checkpoint:
+
+```bash
+python test_EfficientPIE_JAAD.py --data-path <jaad_dir> --weights weights/transfer_best_f1_model_JAAD_bbox_traj.pth \
+    --use-bbox-trajectory --split test
+```
+
+Other useful flags: `--max-train-samples`/`--max-val-samples` (smoke tests),
+`--no-save` (disable checkpointing), `--progress-every` (fallback progress
+interval when `tqdm` isn't installed).
+
+Supporting tools:
+
+```bash
+# Extract only the JAAD frames actually needed by the 15-frame sequences.
+python tools/extract_required_jaad_frames.py --data-path <jaad_dir> --splits train val
+
+# Sweep the classification threshold on a saved checkpoint.
+python tools/tune_jaad_threshold.py --data-path <jaad_dir> --weights <checkpoint.pth> \
+    --use-bbox-trajectory --split val --output logs/threshold_tuning.csv
 ```
 
 ## Goal
@@ -46,6 +101,12 @@ Use the EfficientPIE lightweight convolutional architecture as a baseline for pe
 - Device used: CPU
 - Training loss: class-weighted cross entropy
 - Reason for class weighting: JAAD is imbalanced toward not-crossing samples
+- Training-time logit perturbation: before computing the loss, each training
+  batch's logits are nudged by a small random, epoch-scaled offset
+  (`robust_noisy` in `utils/train_val.py`, ramping from 0 up to ±0.5 by epoch
+  30). This is a stochastic-robustness regularizer inherited from the
+  upstream project and only applies during training, never during
+  validation/test evaluation.
 
 ## JAAD Class Counts
 
@@ -370,8 +431,10 @@ requiring all 15 images to be loaded by the model.
 - The reported final test uses the standard `0.50` decision threshold.
 - JAAD videos and extracted frames are intentionally excluded from this
   repository.
-- Epoch-level metrics and the final test console output are retained in
-  `logs/`.
+- Epoch-level metrics and the final test console output for Version 1 and
+  Version 2 are retained in `logs/`. The baseline run's per-epoch metrics CSV
+  was not retained; only the final validation snapshot reported above is
+  available for the baseline.
 
 ## Acknowledgements And Citations
 
